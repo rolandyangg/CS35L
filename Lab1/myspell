@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sh ./makedict </usr/share/dict/linux.words > my.words
+sh ./makedict $1 | comm -23 - my.words
+rm my.words

@@ -1,0 +1,50 @@
+Roland Yang 506053914
+
+2.1)
+
+(* (expt 2 (- 607 1)) (- (expt 2 607) 1))
+
+(+ (logb (* (expt 2 (- 607 1)) (- (expt 2 607) 1))) 1)
+
+C-h k C-h k pulls up the documentation for the command "C-h k" which is the "command describe-key". 
+This happens because the C-h k command pulls up the documentation for a command, and we ask it to pull up the documentation for the command itself (C-h k).
+
+C-h k M-SPC pulls up the documentation for the command "M-SPC" which is the command for "just-one-space".
+This happens because we call the C-h k command which pulls up the documentation for a command and ask it to pull up the documentation for the command "M-SPC".
+M-SPC works by deleting all the spaces and tabs around a POINT, leaving only one space (ex. if there's a bunch of extra tabs or spaces, it truncates the extra whitespace and turns it into one space)
+
+(cycle-spacing n nil 'single-shot)
+[NOTE: for it to function similar to M-SPC, n in the function above is equivalent to 1]
+To evaluate on buffer can use M-: or M-x eval-expression
+
+############################################################################################
+
+Homework: Python scripting)
+
+In python2 randline.py gets an IndexError trying to access an index out of range for /dev/null
+
+In python3 randline.py gets a Syntax Error on line 65 "except IOError as (errno, strerror):" attempting to catch the exception for /dev/null
+This is because the syntax for catching exceptions has slightly different rules between Python 2 and Python 
+
+shuf.py NOTE: For my implementation of shuf.py, "-" or a zero for the non-option argument will trigger the stdin option, however a zero argument with -e or -i will have -e or -i take precedence
+To mimic the behavior of the GNU version closely, combining -e and -i will create an error, and combining any stdin option with -e or -i will have -e or -i take precedence over it respectfully.
+
+In python2, my shuf.py script exhibits the same behavior as it does in python3... This is because my script is backwards compatible?
+
+CPU Model: Intel(R) Xeon(R) Silver 4116 CPU @ 2.10GHz
+OS Version: Red Hat Enterprise Linux [8.5 (Ootpa)]
+
+time /usr/bin/python3 shuf.py < /usr/share/unicode/ucd/BidiTest.txt > /dev/null
+usr 0.903s, 0.899s, 0.911s
+sys 0.053s, 0.054s, 0.040s
+sum 0.956s, 0.953s, 0.951s -> 0.953s
+
+time /usr/local/cs/bin/python3 shuf.py < /usr/share/unicode/ucd/BidiTest.txt > /dev/null
+usr 0.648s, 0.651s, 0.642s
+sys 0.061s, 0.050s, 0.061s
+sum 0.709s, 0.701s, 0.703s -> 0.703s
+
+time /usr/local/cs/bin/shuf < /usr/share/unicode/ucd/BidiTest.txt > /dev/null
+usr 0.061s, 0.052s, 0.056s
+sys 0.008s, 0.010s, 0.010s
+sum 0.069s, 0.062s, 0.066s -> 0.066s
