@@ -1,0 +1,6 @@
+Roland Yang 506053914
+
+Based on the output of git branch:
+The main noticeable difference is that the one in ~eggert/src/github/git has more local branches currently active/existing, while the one in my repository only has one (master, which is the default).
+
+This is probably because whoever was working on ~eggert/src/github/git was working on or viewing multiple branches. The repository on my machine is freshly pulled and thus only has the default branch as the local branch.

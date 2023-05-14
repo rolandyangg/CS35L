@@ -1,0 +1,117 @@
+Roland Yang 506053914
+
+The code changes that actually made this happen can be found in the merge-ort.c and b/t/t4301-merge-tree-write-tree.sh files. Looking into the diff changes for the two commits that originally introduced these changes will give all the specific code changes that introduced this change.
+
+The commit ID related to these changes:
+92481d1b26ab57525f5efe01d01c7a3d337b8df7
+0b55d930a69692c7f4e7b90e35fa41f6c46df4bc
+
+The person that authored the changes: Johannes Schindelin
+(reviewed by Elijah Newren, and signed off by Junio C Hamano)
+
+---------------------------------------------------------------------------------------
+
+I found this using the following commands:
+
+---------------------------------------------------------------------------------------
+
+git checkout v2.39.0
+This command swaps to the branch in which the patch was made. I navigate from here
+
+---------------------------------------------------------------------------------------
+
+git log --grep='merge result tree object'
+
+"""
+commit bcf22f29df87f25582de0ac9274d1567fa16be6f
+Merge: 7f8a6caee5 92481d1b26
+Author: Junio C Hamano <gitster@pobox.com>
+Date:   Tue Oct 25 17:11:34 2022 -0700
+
+    Merge branch 'js/merge-ort-in-read-only-repo' into maint-2.38
+    
+    In read-only repositories, "git merge-tree" tried to come up with a
+    merge result tree object, which it failed (which is not wrong) and
+    led to a segfault (which is bad), which has been corrected.
+    
+    * js/merge-ort-in-read-only-repo:
+      merge-ort: return early when failing to write a blob
+      merge-ort: fix segmentation fault in read-only repositories
+
+commit 19118cb8570e499e1a56e81740cee3d1c1206b44
+Merge: a215853545 92481d1b26
+Author: Junio C Hamano <gitster@pobox.com>
+Date:   Mon Oct 10 10:08:43 2022 -0700
+
+    Merge branch 'js/merge-ort-in-read-only-repo'
+    
+    In read-only repositories, "git merge-tree" tried to come up with a
+    merge result tree object, which it failed (which is not wrong) and
+    led to a segfault (which is bad), which has been corrected.
+    
+    * js/merge-ort-in-read-only-repo:
+      merge-ort: return early when failing to write a blob
+      merge-ort: fix segmentation fault in read-only repositories
+
+"""
+
+After switching to the version that patched it, I decided to git log and search through for any commits related to the “In read-only repositories, "git merge-tree" tried to come up with a merge result tree object, which it failed (which is not wrong) and led to a segfault (which is bad), which has been corrected.” 
+The string 'merge result tree object' seemed specific so I grepped it and it came back with two commits (both of which were merges):
+bcf22f29df87f25582de0ac9274d1567fa16be6f
+19118cb8570e499e1a56e81740cee3d1c1206b44
+Both were by Junio C Hamano and both merges contained a message near identical to the one in the patch notes we were searching for, so I knew I was getting closer to what I was looking for.
+
+---------------------------------------------------------------------------------------
+
+It looks like it is merging the branch 'js/merge-ort-in-read-only-repo' which makes several changes to the code files for merge-ort
+I decided to check out the commits from where they were merged:
+
+git show a215853545
+The message relating to this commit and following it back even further seemed to not contain any information I could easily find that I needed.
+
+git show 92481d1b26
+This commit by Johannes Schindelin, reviewed by Elijah Newren, and signed off by Junio C Hamano contained a lot of useful information about the patches we were searching for. Here is an excerpt from the message:
+"""
+merge-ort: return early when failing to write a blob
+    
+In the previous commit, we fixed a segmentation fault when a tree object
+could not be written.
+    
+However, before the tree object is written, `merge-ort` wants to write
+out a blob object (except in cases where the merge results in a blob...
+"""
+It seems that it also relates to the previous commit so I went back even farther.
+
+git show 92481d1b26^
+This commit (0b55d930a69692c7f4e7b90e35fa41f6c46df4bc) seems to be the one that begins to fix segmentation fault in read-only repositories. Here is a blurb from its message:
+"""
+merge-ort: fix segmentation fault in read-only repositories
+    
+If the blob/tree objects cannot be written, we really need the merge
+operations to fail, and not to continue (and then try to access the tree...
+"""
+Going back any near-further seems to return unrelated results.
+
+Out of all of the commits so far, I started to realize that the changes were occuring in the merge-ort.c file.
+
+I decided to check out the other side:
+
+git show 7f8a6caee5
+This message doesn't seem to contain anything related to the change we are looking far. I think a little pattern I picked up here is that the commit merged on the left side of the two merged commit IDs is the one that is being merged into while the ID on the right contains the useful features being merged in.
+
+git show 92481d1b26
+This is the same exact commit from earlier by Johannes that we found.
+
+Based on the merge message from Junio's merges, it appears that thepatch is a merge of two commits, the one that returns early when failing to write a blob and the other one fixing segmentation fault in read-only.
+I presume that these are the correct two.
+
+---------------------------------------------------------------------------------------
+
+git log --graph --oneline --decorate bcf22f29df87f25582de0ac9274d1567fa16be6f
+To be sure I run the git graph command we used earlier in the spec to visualize what the graph looks like.
+My hypothesis is confirmed as the two commits that we viewed are the only nearby ones on the graph that appear to be related to the patch we are searching for.
+
+git log --graph --oneline --decorate 19118cb8570e499e1a56e81740cee3d1c1206b44
+Running it on the other merge, I found that they were related to the same two commits.
+
+I know I found the code and commits I was searching for now.

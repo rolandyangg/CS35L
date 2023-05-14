@@ -1,0 +1,37 @@
+Roland Yang 506053914
+
+1.
+git grep "Even newspaper reports present contradictory information."
+
+Finds which file the string actually was/is in
+
+------------------------------------------------------------------------
+
+2.
+git blame northamerica | grep "Even newspaper reports present contradictory information."
+
+Grabs the specific line, and commit with the author that last modified the string.
+Gives us for our case the commit c8f960ec7, and the last modifying author is Eggert.
+
+HOWEVER! This does not guarantee that this is the author that INTRODUCED the line...
+(But these were the commands I used before re-reading the spec and finding that this did not accomplish the task completely)
+
+------------------------------------------------------------------------
+
+3.
+git log -S "Even newspaper reports present contradictory information."
+
+Searches the git history for the commit that introduced (or removed) the specific string
+Gives us for our case the commit c12b432741eed9a422fbf99fa27af6e7a941d88b.
+
+------------------------------------------------------------------------
+
+4. 
+git blame c12b432741eed9a422fbf99fa27af6e7a941d88b northamerica | grep "Even newspaper reports present contradictory information."
+
+Grabs the specific line, and commit with the author that last modified the string in this given commit.
+We find that in this commit it is line 285 by Arthur David Olson.
+
+------------------------------------------------------------------------
+
+Through these commands, I found that the original author of the line in the source files was Arthur David Olson in commit id c12b432741eed9a422fbf99fa27af6e7a941d88b, on 1995-12-21 11:43:42 -0500 on line 285 of northamerica.
