@@ -26,8 +26,8 @@ class CommitNode:
 def get_git_repo():
     curr_directory = os.getcwd()
     while True:  # Mimic a "do while" loop
-        if os.path.isdir(curr_directory + "/.git"):
-            curr_directory = curr_directory + "/.git"
+        if os.path.isdir(os.path.join(curr_directory, "/.git")):
+            curr_directory = os.path.join(curr_directory, "/.git")
             break
         if curr_directory == "/":
             break
@@ -41,8 +41,8 @@ def get_git_repo():
 
 
 def parse_object(repo_path, commit_hash):
-    object_path = repo_path + "/objects/"
-    object_path += commit_hash[:2] + "/" + commit_hash[2:]
+    object_path = os.path.join(repo_path, "/objects/")
+    object_path = os.path.join(object_path, commit_hash[:2], commit_hash[2:])
 
     # 'rb' = read binary
     with open(object_path, 'rb') as f:
@@ -78,7 +78,7 @@ def topo_order_commits():
     #########################################################################
 
     # BFS to get branch heads
-    heads_path = repo_path + "/refs/heads"
+    heads_path = os.path.join(repo_path, "/refs/heads")
 
     queue = []
     queue.append('')  # Begin with no branch
@@ -86,7 +86,7 @@ def topo_order_commits():
 
     while queue:
         popped = queue.pop(0)
-        branches_path = heads_path + "/" + popped  # .git/refs/heads/ + .../...
+        branches_path = os.path.join(heads_path, popped) # .git/refs/heads/ + .../...
 
         for file in os.listdir(branches_path):
             file_path = branches_path + file  # .git/refs/heads/.../ + file
