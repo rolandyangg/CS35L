@@ -1,0 +1,221 @@
+Roland Yang 506053914
+
+-----------------------------------------------------------------------------
+
+SANITY TEST RESULTS (output from sanity check commands in spec)
+
+16384+0 records in
+16384+0 records out
+134217728 bytes (134 MB, 128 MiB) copied, 0.90538 s, 148 MB/s
+
+real    0m0.908s
+user    0m0.020s
+sys     0m0.884s
+
+real    0m3.942s
+user    0m3.917s
+sys     0m0.011s
+
+real    0m4.053s
+user    0m3.980s
+sys     0m0.251s
+
+real    0m4.063s
+user    0m3.916s
+sys     0m0.120s
+
+-----------------------------------------------------------------------------
+
+Download randall-git.tgz:
+wget https://web.cs.ucla.edu/classes/spring23/cs35L/assign/randall-git.tgz
+
+Unzip the tar:
+tar -xvzf randall-git.tgz
+
+Find the file path of the .git folder that was unzipped so we can clone it:
+realpath .git
+
+Clone the repository locally:
+git clone /w/home.06/cs/ugrad/rolandy/lab5/.git
+
+Now the files that we need should be in a folder. In my case it was a folder called "lab5"
+
+-----------------------------------------------------------------------------
+
+Write simple tests that check the script in the makefile:
+
+check:
+    command
+
+This will run whenever "make check" is called. The command or "recipe" there is:
+./randall 10 | wc --bytes | grep -w "10" && echo "CORRECT" || echo "WRONG"
+
+Where 10 is interchangable with whatever number checkable to make sure the script outputs the correct length.
+
+-----------------------------------------------------------------------------
+
+SPLITTING INTO MODULES
+
+Appropriately split randall.c into separate .c and .h files. 
+Useful resource was Nachenberg's CS32 Slides: https://drive.google.com/drive/folders/1ZKFgzOufXfWKg5jLRHaPCa2tEwHu6VT7
+
+More specifically:
+options.c / options.h (command line related)
+output.c / output.h (output related)
+rand64-hw.c / rand64-hw.h (hardware related)
+rand64-sw.c / rand64-hw.h (software related)
+randall.c (main file)
+
+For the sake of progressing through the project, I put the includes statements from the randall.c file into every single header file.
+We will remove these later before submitting the project when optimizing it.
+
+Inside the make file changed the randall compilation/linking to now include all of the new .c files we created.
+
+-----------------------------------------------------------------------------
+
+PARSING OPTION FLAGS
+
+Now attempt to incrementally build our program. My first idea was to get the argument parsing for each option to work properly.
+
+We use getopt to help us out. Since command line related things should occur in the options file I created a function called process_options that takes in the argc and argv, and essentially processes them using getopt.
+
+In this step I mainly aimed to make sure it could detect the flags properly. I used a while loop with a switch statement that follows the format below.
+while ((opt = getopt(argc, argv, "i:o:")) != -1) {
+    switch (opt) {
+        case 'i':
+            ...
+            break;
+        case 'o':
+            ...
+            break;
+        case '?':
+            // Invalid option or missing argument
+    }
+} 
+This would detect the flags i and o. If it successfully found a singular flag (since you can't have multiple) it would return a success code and failure code otherwise.
+
+Inside the main function, called this at the top for testing purposes but did not modify any of the other code in the main of randall.c just yet.
+
+-----------------------------------------------------------------------------
+
+REGULAR ARGUMENTS / READING NBYTES
+
+Next I attempted to get the detection of the non-option arguments supported. 
+
+To do this I added a pointer to the nbytes variable into the process_options method header, so inside of our process options method in the options.c file, it would be able to set nbytes in the main program to the approrpiate argument given.
+
+I copied the code over from the randall.c regarding setting nbytes, which is the if statement with "argc == 2" and moved it into the options.c file.
+
+From here I created a for loop which parses all of the non-optional arguments.
+Since there are options now, they technically count as arguments as well so we can't use argc as a reliable source.
+So instead I changed it to a for loop making use of optind which allows us to grab all of the non-flagged arguments.
+
+Now I process one argument and set nbytes to it using the original code from randall.c, and if there is another non-flagged argument we crash the program and print and error.
+
+I also added some more error handling for non-flagged arguments, checking to see if no arguments were provided.
+
+-----------------------------------------------------------------------------
+
+CHECKING OPTION CHOICES
+
+Still dealing with parsing the options and arguments, I decided to add support for valid arguments for the input and output flags.
+
+For the input options, it could only be "rdrand", "mrand48_r" or "/F" where F is a file name,
+so I simply just checked the input argument against "rdrand" and "mrand48_r" using strcmp to see if it matched.
+For the file option, I checked the first character of the argument to see if it was a slash. Other arguments were regarded as invalid.
+
+Similarly for the output options, I used an if statement following a similar process as the input option argument checking.
+I made it detect the "stdio" as a valid output option, but didn't quite implement the write N bytes at a time option yet. Planning on doing this after handling input, for now it just detects it.
+
+I also replaced most of the perror's in option.c with fprintf(stderr, "..."); which essentially does the same but doesn't output the corresponding message for the error number at the end of the error message which is a little cleaner.
+
+-----------------------------------------------------------------------------
+
+READING FILE INPUT
+
+I decided to implement the option for reading a file as input instead of the normal /dev/random.
+
+To do this I first changed the code in rand64-sw.c such that it had a new filename variable (initialied to /dev/random as default).
+I changed the init/constructor such that it would open the random stream for the filename variable.
+Then I added a helper function that allows the filename variable to be changed.
+Now I have the ability TO change the file being read as the source of byte data.
+
+Next part was to actually implement being able to input a valid file:
+To do this in the options.c file under the processing for files in the processing input flags, I attempted to open the file of the name passed in as the argument.
+If it failed then we completely returned from the function and give an error message saying it is invalid. Otherwise if it succeeds we set the file to be read from using the helper method then close the file.
+
+For testing purposes in the main randall.c file I set it so it would always use the software rand instead of the hardware. The next section implements the hardware/software input choice decision part.
+The code now successfully can read from the start of a specified file if it exists though.
+
+-----------------------------------------------------------------------------
+
+DIRECTING TO CORRECT INPUT CHOICES
+
+inside of the main function of the randall.c file, I made it so depending on the input choice it would redirect to the corresponding correct option.
+
+Simply I just added an if statement that checked the integer of the choice, and depending on the integer it would set the rand64 to the appropriate choice.
+To be more specific, if the choice was mdrand, it would set the object to hardware, if it was mdrand48_r, it would set it to that one (not implemented yet but will be later) and if it was file it was set to the software one.
+
+Instead of having hardware fallback to software if it fails I made it output and error so it corresponded with the spec's behavior.
+Now it properly redirects based on the input choice.
+
+-----------------------------------------------------------------------------
+
+IMPLEMENTING mrand48_r
+
+I decided to create a module similar to the rand64-sw and rand64-hw ones.
+I copy pasted the software file then renamed everything in it to rand48 but kept the same methods (removed the file part though).
+
+Inside of the rand48 method that returns a random value I used the mrand48_r to generate a random value using the current time as the seed (so it is "random").
+The random value was casted/extended to an unsigned long long and returned.
+
+As already implemented in the last step, there is an if statement already setup that sets the generator to the mrand48_r module if chosen as the input.
+Now the mrand48_r input option is fully working.
+
+-----------------------------------------------------------------------------
+
+PROCESSING -o N
+
+Could've done this in an earlier step when checking option choices but ended up doing this later because I implemented the output N bytes later.
+
+I copied the same strtoll code that was involved in processing a non-argument and pasted it in the else statement of the option checking if statement.
+So now if the output flag argument was not "stdio", it would immediately assume it MUST be a number.
+From here the error checking is all done by strtoll.
+
+In order to have it be able to interact with randall.c's main, I added a new variable to randall.c called chunksize and passed a pointer to it into the method in options.c that processed methods.
+If it was able to successfully process an integer N from the option argument, it would set it to chunksize and change the option choice so the main method in randall.c knows.
+I put in some printf methods as well to make sure the entire control flow is working properly.
+
+Now the program properly parses and reads -o N where N is an integer.
+
+-----------------------------------------------------------------------------
+
+PRINTING N BYTES AT A TIME 
+
+Now I worked on one of the final parts: actually implementing the option to write N bytes at a time.
+
+To do this I simply used a while loop, that kept printing chunks depending on the chunksize set.
+This loop simply would decrement nbytes by N or chunksize (the number passed in with the -o flag) until it became negative or zero.
+Each time through the loop it would go through the source inputted and output those bytes, then increment forward N bytes through the use of an offset.
+
+Of course there is error handling in case it fails. 
+
+Now the print N bytes at a time output successfully works.
+
+-----------------------------------------------------------------------------
+
+MAKING EXTRA TEST CASES AND FINALIZING
+
+Finalizing up the project, I commented out the regular printf lines from all of the files that used them for debugging.
+
+I then went through all the header files and removed all of the unnecessary libraries that were included. This was figured out by removing them decrementally until the makefile didn't work, then I found a library that was truly NEEDED so I kept it.
+
+For the extra test cases I made sure to add cases that tested each new addition that was added on.
+NOTE: For the -i /F case, it only works on my SEASNET machine...
+NOTE: For the last -o N case, the PASSED and FAILED echos are purposely flipped, since it should crash due to the limitations of the restrictions provided in the assignment spec.
+
+I created a script called speedtest.sh that was used to run the sanity test code in the spec and obtain speeds.
+
+-----------------------------------------------------------------------------
+
+Results were then separated and compressed appropriately for submission accordingly to the spec page requirements.
