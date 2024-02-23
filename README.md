@@ -7,3 +7,5 @@
 | 5. Low-level refactoring and performance  | 84 |
 | 6. Git repository organization  | 100  |
 | Final Project  | 95 |
+| Midterm | 79 |
+| Final | 126.5/180 |
