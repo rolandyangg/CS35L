@@ -1,4 +1,4 @@
-My work for UCLA's CS35L (Software Construction) Class Spring Quarter 2023: https://web.cs.ucla.edu/classes/spring23/cs35L/
+My work for UCLA's CS35L (Software Construction) in Spring Quarter 2023: [https://web.cs.ucla.edu/classes/spring23/cs35L/](https://web.cs.ucla.edu/classes/spring23/cs35L/)
 
 | Assignment  | Grade | Comments |
 | ------------- | ------------- | ------------- |
